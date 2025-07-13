@@ -18,6 +18,10 @@ type PaymentRequest struct {
 	Amount        float64 `json:"amount" binding:"required,gt=0"`
 }
 
+type PaymentResponse struct {
+	Message string `json:"message"`
+}
+
 type SummaryResponse struct {
 	Default  ProcessorSummary `json:"default"`
 	Fallback ProcessorSummary `json:"fallback"`
