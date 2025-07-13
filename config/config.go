@@ -1,6 +1,9 @@
 package config
 
-import "time"
+import (
+	"os"
+	"time"
+)
 
 type Config struct {
 	Port                 string
@@ -10,4 +13,11 @@ type Config struct {
 	HTTPTimeout          time.Duration
 	MaxConcurrent        int
 	DatabaseDSN          string
+}
+
+func getEnv(key, defaultValue string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return defaultValue
 }
