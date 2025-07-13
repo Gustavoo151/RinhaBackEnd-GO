@@ -4,10 +4,11 @@ import (
 	"RinhaBackend/config"
 	"RinhaBackend/models"
 	"database/sql"
-	_ "gi
 	"log"
 	"sync"
 	"time"
+
+	_ "github.com/lib/pq"
 )
 
 type Repository struct {
