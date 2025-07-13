@@ -1,9 +1,9 @@
 package models
 
 import (
-	_ "time"
-
 	_ "github.com/google/uuid"
+
+	_ "time"
 )
 
 type Payment struct {
@@ -18,7 +18,7 @@ type PaymentRequest struct {
 	Amount        float64 `json:"amount" binding:"required,gt=0"`
 }
 
-type PaymentResponse struct {
+type SummaryResponse struct {
 	Default  ProcessorSummary `json:"default"`
 	Fallback ProcessorSummary `json:"fallback"`
 }
@@ -26,4 +26,9 @@ type PaymentResponse struct {
 type ProcessorSummary struct {
 	TotalRequests int     `json:"totalRequests"`
 	TotalAmount   float64 `json:"totalAmount"`
+}
+
+type HealthStatus struct {
+	Failing         bool `json:"failing"`
+	MinResponseTime int  `json:"minResponseTime"`
 }
