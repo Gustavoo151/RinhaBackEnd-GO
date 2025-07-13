@@ -3,6 +3,7 @@ package health
 import (
 	"RinhaBackend/models"
 	"RinhaBackend/processor"
+
 	"context"
 	"log"
 	"sync"
@@ -88,4 +89,10 @@ func (m *Monitor) GetFallbackStatus() models.HealthStatus {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.fallbackStatus
+}
+
+func (m *Monitor) setDefaultStatus(status models.HealthStatus) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.defaultStatus = status
 }
