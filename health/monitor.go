@@ -44,3 +44,7 @@ func (m *Monitor) Start() {
 		}
 	}
 }
+
+func (m *Monitor) Stop() {
+	close(m.stop)
+}
