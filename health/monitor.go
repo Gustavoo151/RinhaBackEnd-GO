@@ -27,3 +27,20 @@ func NewMonitor(defaultClient, fallbackClient *processor.Client, interval time.D
 		stop:           make(chan struct{}),
 	}
 }
+
+func (m *Monitor) Start() {
+	ticker := time.NewTicker(m.interval)
+	defer ticker.Stop()
+
+	// Verificação inicial
+	m.checkHealth()
+
+	for {
+		select {
+		case <-ticker.C:
+			m.checkHealth()
+		case <-m.stop:
+			return
+		}
+	}
+}
