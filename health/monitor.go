@@ -77,3 +77,9 @@ func (m *Monitor) checkHealth() {
 		m.setFallbackStatus(fallbackStatus)
 	}
 }
+
+func (m *Monitor) GetDefaultStatus() models.HealthStatus {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.defaultStatus
+}
