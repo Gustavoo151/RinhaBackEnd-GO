@@ -85,3 +85,7 @@ func (c *Client) CheckHealth(ctx context.Context) (models.HealthStatus, error) {
 
 	return status, nil
 }
+
+func (c *Client) GetName() string {
+	return c.name
+}
