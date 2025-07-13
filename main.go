@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	_ "os"
 	"os/signal"
 	"syscall"
 	"time"
