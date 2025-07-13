@@ -21,8 +21,8 @@ func Load() *Config {
 	defaultURL := getEnv("PAYMENT_PROCESSOR_URL_DEFAULT", "http://payment-processor-default:8080")
 	fallbackURL := getEnv("PAYMENT_PROCESSOR_URL_FALLBACK", "http://payment-processor-fallback:8080")
 
-	healthCheckInterval, _ := strconv.Atoi(getEnv("HEALTH_CHECK_INTERVAL", "5"))
-	httpTimeout, _ := strconv.Atoi(getEnv("HTTP_TIMEOUT", "2"))
+	healthCheckInterval, _ := strconv.Atoi(getEnv("HEALTH_CHECK_INTERVAL", "10"))
+	httpTimeout, _ := strconv.Atoi(getEnv("HTTP_TIMEOUT", "5"))
 	maxConcurrent, _ := strconv.Atoi(getEnv("MAX_CONCURRENT", "1000"))
 
 	return &Config{
