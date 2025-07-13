@@ -4,9 +4,10 @@ import (
 	"RinhaBackend/models"
 	"RinhaBackend/processor"
 	"RinhaBackend/storage"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Router struct {
@@ -37,9 +38,8 @@ func (r *Router) SetupRoutes() *gin.Engine {
 
 func (r *Router) handlePayment(c *gin.Context) {
 	var req models.PaymentRequest
-
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
 
@@ -47,48 +47,44 @@ func (r *Router) handlePayment(c *gin.Context) {
 	payment := models.Payment{
 		CorrelationID: req.CorrelationID,
 		Amount:        req.Amount,
-		RequestedAt:   time.Now().UTC(),
+		RequestedAt:   time.Now(),
+	}
+
+	// Salvando no repositório
+	if err := r.repo.SavePayment(payment); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save payment"})
+		return
 	}
 
 	// Processando o pagamento de forma assíncrona
-	go func() {
-		if err := r.strategy.ProcessPayment(payment); err != nil {
-			// Logando o erro, mas não bloqueando a resposta
-			// pois o processamento é assíncrono
-		} else {
-			// Salvando o pagamento processado
-			r.repo.SavePayment(payment)
-		}
-	}()
+	r.strategy.ProcessPaymentAsync(payment)
 
 	// Retornando sucesso imediatamente
-	c.JSON(http.StatusAccepted, models.PaymentResponse{
-		Message: "Payment request accepted",
+	c.JSON(http.StatusCreated, models.PaymentResponse{
+		Message: "Payment processing initiated",
 	})
 }
 
 func (r *Router) handleSummary(c *gin.Context) {
 	// Processando parâmetros de data
-	var fromTime, toTime *time.Time
+	var from, to *time.Time
 
 	if fromStr := c.Query("from"); fromStr != "" {
-		parsedTime, err := time.Parse(time.RFC3339, fromStr)
-		if err == nil {
-			fromTime = &parsedTime
+		if parsed, err := time.Parse(time.RFC3339, fromStr); err == nil {
+			from = &parsed
 		}
 	}
 
 	if toStr := c.Query("to"); toStr != "" {
-		parsedTime, err := time.Parse(time.RFC3339, toStr)
-		if err == nil {
-			toTime = &parsedTime
+		if parsed, err := time.Parse(time.RFC3339, toStr); err == nil {
+			to = &parsed
 		}
 	}
 
 	// Obtendo o resumo
-	summary, err := r.repo.GetSummary(fromTime, toTime)
+	summary, err := r.repo.GetSummary(from, to)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get summary"})
 		return
 	}
 
