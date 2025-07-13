@@ -2,6 +2,7 @@ package processor
 
 import (
 	"RinhaBackend/models"
+
 	"bytes"
 	"context"
 	"encoding/json"
@@ -26,7 +27,6 @@ func NewClient(baseURL, name string, timeout time.Duration) *Client {
 
 func (c *Client) ProcessPayment(ctx context.Context, payment models.Payment) error {
 	paymentData, err := json.Marshal(payment)
-
 	if err != nil {
 		return fmt.Errorf("Error marshalling payment data: %v", err)
 	}
@@ -37,19 +37,15 @@ func (c *Client) ProcessPayment(ctx context.Context, payment models.Payment) err
 		fmt.Sprintf("%s/payments", c.baseURL),
 		bytes.NewBuffer(paymentData),
 	)
-
 	if err != nil {
 		return fmt.Errorf("Error creating request: %v", err)
 	}
-
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.httpClient.Do(req)
-
 	if err != nil {
 		return fmt.Errorf("Error executing request: %v", err)
 	}
-
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
@@ -57,4 +53,35 @@ func (c *Client) ProcessPayment(ctx context.Context, payment models.Payment) err
 	}
 
 	return fmt.Errorf("resposta inválida do processador: %d", resp.StatusCode)
+}
+
+func (c *Client) CheckHealth(ctx context.Context) (models.HealthStatus, error) {
+	client := &http.Client{Timeout: 2 * time.Second}
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		fmt.Sprintf("%s/payments/service-health", c.baseURL),
+		nil,
+	)
+	if err != nil {
+		return models.HealthStatus{Failing: true}, fmt.Errorf("Error creating request: %v", err)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return models.HealthStatus{Failing: true}, fmt.Errorf("Error executing request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return models.HealthStatus{Failing: true}, fmt.Errorf("resposta inválida: %d", resp.StatusCode)
+	}
+
+	var status models.HealthStatus
+	if err := json.NewDecoder(resp.Body).Decode(&status); err != nil {
+		return models.HealthStatus{Failing: true}, fmt.Errorf("Error decoding response: %v", err)
+	}
+
+	return status, nil
 }
