@@ -25,8 +25,8 @@ func NewMonitor(defaultClient, fallbackClient *processor.Client, interval time.D
 		defaultClient:  defaultClient,
 		fallbackClient: fallbackClient,
 		interval:       interval,
-		defaultStatus:  models.HealthStatus{Failing: false, MinResponseTime: 100},
-		fallbackStatus: models.HealthStatus{Failing: false, MinResponseTime: 100},
+		defaultStatus:  models.HealthStatus{Failing: true, MinResponseTime: 0},
+		fallbackStatus: models.HealthStatus{Failing: true, MinResponseTime: 0},
 		stop:           make(chan struct{}),
 	}
 }
@@ -36,12 +36,12 @@ func (m *Monitor) Start() {
 	defer ticker.Stop()
 
 	// Verificação inicial
-	m.checkHealth()
+	go m.checkHealth()
 
 	for {
 		select {
 		case <-ticker.C:
-			m.checkHealth()
+			go m.checkHealth()
 		case <-m.stop:
 			return
 		}
@@ -58,24 +58,32 @@ func (m *Monitor) checkHealth() {
 	defer cancel()
 
 	// Verificando o status do processador default
+	start := time.Now()
 	defaultStatus, err := m.defaultClient.CheckHealth(ctx)
 	if err != nil {
 		log.Printf("Erro ao verificar saúde do processador default: %v", err)
-		m.setDefaultStatus(models.HealthStatus{Failing: true, MinResponseTime: 9999})
+		m.setDefaultStatus(models.HealthStatus{Failing: true, MinResponseTime: 0})
 	} else {
+		responseTime := int(time.Since(start).Milliseconds())
+		defaultStatus.MinResponseTime = responseTime
 		m.setDefaultStatus(defaultStatus)
+		log.Printf("Processador default saudável - Tempo de resposta: %dms", responseTime)
 	}
 
 	// Esperando um segundo para evitar rate limiting
 	time.Sleep(1 * time.Second)
 
 	// Verificando o status do processador fallback
+	start = time.Now()
 	fallbackStatus, err := m.fallbackClient.CheckHealth(ctx)
 	if err != nil {
 		log.Printf("Erro ao verificar saúde do processador fallback: %v", err)
-		m.setFallbackStatus(models.HealthStatus{Failing: true, MinResponseTime: 9999})
+		m.setFallbackStatus(models.HealthStatus{Failing: true, MinResponseTime: 0})
 	} else {
+		responseTime := int(time.Since(start).Milliseconds())
+		fallbackStatus.MinResponseTime = responseTime
 		m.setFallbackStatus(fallbackStatus)
+		log.Printf("Processador fallback saudável - Tempo de resposta: %dms", responseTime)
 	}
 }
 
