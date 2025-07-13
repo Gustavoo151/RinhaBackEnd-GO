@@ -1,21 +1,76 @@
 package main
 
 import (
-  "fmt"
+	"context"
+	"log"
+	_ "os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"RinhaBackend/api"
+	"RinhaBackend/config"
+	"RinhaBackend/health"
+	"RinhaBackend/processor"
+	"RinhaBackend/storage"
 )
 
-//TIP <p>To run your code, right-click the code and select <b>Run</b>.</p> <p>Alternatively, click
-// the <icon src="AllIcons.Actions.Execute"/> icon in the gutter and select the <b>Run</b> menu item from here.</p>
-
 func main() {
-  //TIP <p>Press <shortcut actionId="ShowIntentionActions"/> when your caret is at the underlined text
-  // to see how GoLand suggests fixing the warning.</p><p>Alternatively, if available, click the lightbulb to view possible fixes.</p>
-  s := "gopher"
-  fmt.Println("Hello and welcome, %s!", s)
+	// Carregando configurações
+	cfg := config.Load()
 
-  for i := 1; i <= 5; i++ {
-	//TIP <p>To start your debugging session, right-click your code in the editor and select the Debug option.</p> <p>We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-	// for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.</p>
-	fmt.Println("i =", 100/i)
-  }
+	// Inicializando o repositório
+	repo := storage.NewRepository(cfg)
+
+	// Inicializando o cliente HTTP para os processadores
+	defaultClient := processor.NewClient(cfg.DefaultProcessorURL, "default", cfg.HTTPTimeout)
+	fallbackClient := processor.NewClient(cfg.FallbackProcessorURL, "fallback", cfg.HTTPTimeout)
+
+	// Inicializando o monitor de saúde
+	healthMonitor := health.NewMonitor(
+		defaultClient,
+		fallbackClient,
+		cfg.HealthCheckInterval,
+	)
+	go healthMonitor.Start()
+
+	// Inicializando a estratégia de processamento
+	strategy := processor.NewStrategy(
+		defaultClient,
+		fallbackClient,
+		healthMonitor,
+	)
+
+	// Inicializando o roteador HTTP
+	router := api.NewRouter(strategy, repo)
+
+	// Inicializando o servidor HTTP
+	server := api.NewServer(cfg.Port, router)
+
+	// Configurando graceful shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	// Iniciando o servidor HTTP
+	go func() {
+		if err := server.Start(); err != nil {
+			log.Fatalf("Erro ao iniciar o servidor: %v", err)
+		}
+	}()
+
+	// Aguardando sinal de encerramento
+	<-ctx.Done()
+
+	// Parando o servidor HTTP
+	ctxShutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctxShutdown); err != nil {
+		log.Fatalf("Erro ao encerrar o servidor: %v", err)
+	}
+
+	// Parando o monitor de saúde
+	healthMonitor.Stop()
+
+	log.Println("Servidor encerrado com sucesso")
 }
