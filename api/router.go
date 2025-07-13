@@ -66,3 +66,31 @@ func (r *Router) handlePayment(c *gin.Context) {
 		Message: "Payment request accepted",
 	})
 }
+
+func (r *Router) handleSummary(c *gin.Context) {
+	// Processando parâmetros de data
+	var fromTime, toTime *time.Time
+
+	if fromStr := c.Query("from"); fromStr != "" {
+		parsedTime, err := time.Parse(time.RFC3339, fromStr)
+		if err == nil {
+			fromTime = &parsedTime
+		}
+	}
+
+	if toStr := c.Query("to"); toStr != "" {
+		parsedTime, err := time.Parse(time.RFC3339, toStr)
+		if err == nil {
+			toTime = &parsedTime
+		}
+	}
+
+	// Obtendo o resumo
+	summary, err := r.repo.GetSummary(fromTime, toTime)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, summary)
+}
