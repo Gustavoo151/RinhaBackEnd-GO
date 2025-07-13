@@ -4,6 +4,7 @@ import (
 	"RinhaBackend/config"
 	"RinhaBackend/models"
 	"database/sql"
+	_ "gi
 	"log"
 	"sync"
 	"time"
