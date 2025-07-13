@@ -1,20 +1,20 @@
 package models
 
 import (
-	_ "github.com/google/uuid"
+	"time"
 
-	_ "time"
+	_ "github.com/google/uuid"
 )
 
 type Payment struct {
-	CorrelationID string  `json:"correlationID"`
-	Amount        float64 `json:"amount"`
-	RequestedAt   string  `json:"requestedAt"`
-	ProcessedBy   string  `json:"processedBy"`
+	CorrelationID string    `json:"correlationId"`
+	Amount        float64   `json:"amount"`
+	RequestedAt   time.Time `json:"requestedAt"`
+	ProcessedBy   string    `json:"-"` // default ou fallback
 }
 
 type PaymentRequest struct {
-	CorrelationID string  `json:"correlationID" binding:"required,uuid"`
+	CorrelationID string  `json:"correlationId" binding:"required,uuid4"`
 	Amount        float64 `json:"amount" binding:"required,gt=0"`
 }
 
