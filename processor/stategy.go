@@ -77,3 +77,12 @@ func (s *Strategy) ProcessPayment(payment models.Payment) error {
 		return client.ProcessPayment(ctx, payment)
 	}
 }
+
+func (s *Strategy) ProcessPaymentAsync(payment models.Payment) {
+	go func() {
+		err := s.ProcessPayment(payment)
+		if err != nil {
+			log.Printf("Erro ao processar pagamento assíncrono: %v", err)
+		}
+	}()
+}
