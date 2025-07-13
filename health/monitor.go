@@ -96,3 +96,9 @@ func (m *Monitor) setDefaultStatus(status models.HealthStatus) {
 	defer m.mu.Unlock()
 	m.defaultStatus = status
 }
+
+func (m *Monitor) setFallbackStatus(status models.HealthStatus) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.fallbackStatus = status
+}
