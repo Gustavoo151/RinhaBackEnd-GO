@@ -87,4 +87,5 @@ networks:
   backend:
     driver: bridge
   payment-processor:
+    name: payment-processor
     external: true
