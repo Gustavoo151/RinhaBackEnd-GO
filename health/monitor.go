@@ -1,13 +1,13 @@
 package health
 
 import (
-	"RinhaBackend/models"
-	"RinhaBackend/processor"
-
 	"context"
 	"log"
 	"sync"
 	"time"
+
+	"RinhaBackend/models"
+	"RinhaBackend/processor"
 )
 
 type Monitor struct {
