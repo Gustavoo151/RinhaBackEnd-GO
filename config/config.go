@@ -16,7 +16,7 @@ type Config struct {
 	DatabaseDSN          string
 }
 
-func load() *Config {
+func Load() *Config {
 	port := getEnv("PORT", "9999")
 	defaultURL := getEnv("PAYMENT_PROCESSOR_URL_DEFAULT", "http://payment-processor-default:8080")
 	fallbackURL := getEnv("PAYMENT_PROCESSOR_URL_FALLBACK", "http://payment-processor-fallback:8080")
