@@ -7,19 +7,23 @@ import (
 	"sync"
 	"time"
 
-	"RinhaBackend/health"
 	"RinhaBackend/models"
 )
 
 type Strategy struct {
 	defaultClient  *Client
 	fallbackClient *Client
-	healthMonitor  *health.Monitor
+	healthMonitor  HealthChecker
 	workers        chan struct{}
 	mu             sync.Mutex
 }
 
-func NewStrategy(defaultClient, fallbackClient *Client, healthMonitor *health.Monitor) *Strategy {
+type HealthChecker interface {
+	GetDefaultStatus() models.HealthStatus
+	GetFallbackStatus() models.HealthStatus
+}
+
+func NewStrategy(defaultClient, fallbackClient *Client, healthMonitor HealthChecker) *Strategy {
 	return &Strategy{
 		defaultClient:  defaultClient,
 		fallbackClient: fallbackClient,
