@@ -16,3 +16,14 @@ type Monitor struct {
 	mu             sync.RWMutex
 	stop           chan struct{}
 }
+
+func NewMonitor(defaultClient, fallbackClient *processor.Client, interval time.Duration) *Monitor {
+	return &Monitor{
+		defaultClient:  defaultClient,
+		fallbackClient: fallbackClient,
+		interval:       interval,
+		defaultStatus:  models.HealthStatus{Failing: false, MinResponseTime: 100},
+		fallbackStatus: models.HealthStatus{Failing: false, MinResponseTime: 100},
+		stop:           make(chan struct{}),
+	}
+}
