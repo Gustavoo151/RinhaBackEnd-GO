@@ -17,3 +17,11 @@ type PaymentRequest struct {
 	CorrelationID string  `json:"correlationID" binding:"required,uuid"`
 	Amount        float64 `json:"amount" binding:"required,gt=0"`
 }
+
+type PaymentResponse struct {
+	Default  ProcessorSummary `json:"default"`
+	Fallback ProcessorSummary `json:"fallback"`
+}
+
+type ProcessorSummary struct {
+}
