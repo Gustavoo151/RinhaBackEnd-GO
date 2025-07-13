@@ -45,3 +45,26 @@ func NewRepository(cfg *config.Config) *Repository {
 	}
 	return repo
 }
+
+func (r *Repository) SavePayment(payment models.Payment) error {
+	// Salvando no cache
+	r.cacheMutex.Lock()
+	r.cache[payment.CorrelationID] = payment
+	r.cacheMutex.Unlock()
+
+	// Salvando no banco de dados de forma assincrona
+	go func() {
+		_, err := r.db.Exec(
+			"INSERT INTO payments (correlation_id, amount, requested_at, processor) VALUES ($1, $2, $3, $4)",
+			payment.CorrelationID,
+			payment.Amount,
+			payment.RequestedAt,
+			payment.ProcessedBy,
+		)
+		if err != nil {
+			log.Printf("Erro ao salvar pagamento no banco: %v", err)
+		}
+	}()
+
+	return nil
+}
