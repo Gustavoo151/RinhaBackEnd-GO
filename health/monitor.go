@@ -3,6 +3,8 @@ package health
 import (
 	"RinhaBackend/models"
 	"RinhaBackend/processor"
+	"context"
+	"log"
 	"sync"
 	"time"
 )
@@ -47,4 +49,31 @@ func (m *Monitor) Start() {
 
 func (m *Monitor) Stop() {
 	close(m.stop)
+}
+
+func (m *Monitor) checkHealth() {
+	// Usando context com timeout para a verificação de saúde
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	// Verificando o status do processador default
+	defaultStatus, err := m.defaultClient.CheckHealth(ctx)
+	if err != nil {
+		log.Printf("Erro ao verificar saúde do processador default: %v", err)
+		m.setDefaultStatus(models.HealthStatus{Failing: true, MinResponseTime: 9999})
+	} else {
+		m.setDefaultStatus(defaultStatus)
+	}
+
+	// Esperando um segundo para evitar rate limiting
+	time.Sleep(1 * time.Second)
+
+	// Verificando o status do processador fallback
+	fallbackStatus, err := m.fallbackClient.CheckHealth(ctx)
+	if err != nil {
+		log.Printf("Erro ao verificar saúde do processador fallback: %v", err)
+		m.setFallbackStatus(models.HealthStatus{Failing: true, MinResponseTime: 9999})
+	} else {
+		m.setFallbackStatus(fallbackStatus)
+	}
 }
