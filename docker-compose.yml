@@ -1,11 +1,14 @@
-version: '3.8'
+version: "3.8"
 
 services:
   payment-intermediator-api-1:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: payment-intermediator-api-1
     hostname: payment-intermediator-1
+    ports:
+      - "9997:9999"
     deploy:
       resources:
         limits:
@@ -25,7 +28,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: payment-intermediator-api-2
     hostname: payment-intermediator-2
+    ports:
+      - "9998:9999"
     deploy:
       resources:
         limits:
@@ -58,6 +64,7 @@ services:
     depends_on:
       - payment-intermediator-api-1
       - payment-intermediator-api-2
+    restart: on-failure
 
   db:
     image: postgres:15.2-alpine
