@@ -2,8 +2,6 @@ package models
 
 import (
 	"time"
-
-	_ "github.com/google/uuid"
 )
 
 type Payment struct {
