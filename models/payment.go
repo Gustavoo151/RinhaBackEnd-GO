@@ -24,4 +24,6 @@ type PaymentResponse struct {
 }
 
 type ProcessorSummary struct {
+	TotalRequests int     `json:"totalRequests"`
+	TotalAmount   float64 `json:"totalAmount"`
 }
