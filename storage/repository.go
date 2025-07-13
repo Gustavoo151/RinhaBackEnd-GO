@@ -68,3 +68,60 @@ func (r *Repository) SavePayment(payment models.Payment) error {
 
 	return nil
 }
+
+func (r *Repository) GetSummary(from, to *time.Time) (models.SummaryResponse, error) {
+	var summary models.SummaryResponse
+
+	// Definindo o período
+	var fromTime, toTime time.Time
+	if from != nil {
+		fromTime = *from
+	} else {
+		fromTime = time.Time{}
+	}
+
+	if to != nil {
+		toTime = *to
+	} else {
+		toTime = time.Now().UTC()
+	}
+
+	// Consultando o banco de dados
+	rows, err := r.db.Query(`
+		SELECT processor, COUNT(*) as total_requests, COALESCE(SUM(amount), 0) as total_amount
+		FROM payments
+		WHERE ($1 IS NULL OR requested_at >= $1)
+		AND ($2 IS NULL OR requested_at <= $2)
+		GROUP BY processor
+	`, fromTime, toTime)
+
+	if err != nil {
+		return summary, err
+	}
+	defer rows.Close()
+
+	// Inicializando os valores
+	summary.Default = models.ProcessorSummary{TotalRequests: 0, TotalAmount: 0}
+	summary.Fallback = models.ProcessorSummary{TotalRequests: 0, TotalAmount: 0}
+
+	// Processando os resultados
+	for rows.Next() {
+		var processor string
+		var totalRequests int
+		var totalAmount float64
+
+		if err := rows.Scan(&processor, &totalRequests, &totalAmount); err != nil {
+			return summary, err
+		}
+
+		if processor == "default" {
+			summary.Default.TotalRequests = totalRequests
+			summary.Default.TotalAmount = totalAmount
+		} else if processor == "fallback" {
+			summary.Fallback.TotalRequests = totalRequests
+			summary.Fallback.TotalAmount = totalAmount
+		}
+	}
+
+	return summary, nil
+}
