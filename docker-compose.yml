@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: payment-intermediator-api-1
-    hostname: payment-intermediator-1
+    hostname: payment-intermediator-api-1
     ports:
       - "9997:9999"
     deploy:
@@ -23,13 +23,27 @@ services:
       - payment-processor
     depends_on:
       - db
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:9999/payments-summary",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   payment-intermediator-api-2:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: payment-intermediator-api-2
-    hostname: payment-intermediator-2
+    hostname: payment-intermediator-api-2
     ports:
       - "9998:9999"
     deploy:
@@ -46,6 +60,20 @@ services:
       - payment-processor
     depends_on:
       - db
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:9999/payments-summary",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   nginx:
     image: nginx:latest
@@ -62,8 +90,10 @@ services:
     networks:
       - backend
     depends_on:
-      - payment-intermediator-api-1
-      - payment-intermediator-api-2
+      payment-intermediator-api-1:
+        condition: service_healthy
+      payment-intermediator-api-2:
+        condition: service_healthy
     restart: on-failure
 
   db:
