@@ -83,3 +83,9 @@ func (m *Monitor) GetDefaultStatus() models.HealthStatus {
 	defer m.mu.RUnlock()
 	return m.defaultStatus
 }
+
+func (m *Monitor) GetFallbackStatus() models.HealthStatus {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.fallbackStatus
+}
